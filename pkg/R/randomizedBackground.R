@@ -20,7 +20,7 @@ chip.file <- read.table(file=chip,sep="\t",header=FALSE, stringsAsFactors=FALSE)
 sample.reads.all <- 0
 
 # list of chromosomes
-chr.all <- levels(infile$V1)
+chr.all <- unique(infile$V1)
 
 # chromosome sizes
 chr.all.sizes <- table(infile$V1)
@@ -65,7 +65,7 @@ for(j in 1:length(chr.all)){
 	for(i in 1:peak.num){
 		temp.loc <- peak.loc.sample.index[i]
 		temp.win <- peak.window[i]
-		sample.reads[i] <- sum(chip.chr[temp.loc:temp.loc+temp.win])
+		sample.reads[i] <- sum(chip.chr[temp.loc:(temp.loc+temp.win)])
 	}
 	
 	if(j == 1){

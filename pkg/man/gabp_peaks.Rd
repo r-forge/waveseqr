@@ -13,12 +13,16 @@ of the human genome. Mother function was 'morlet' and gap size was 0.
 }
 \usage{data(gabp_peaks)}
 \format{
-  A data frame with 1590 observations on the following 4 variables.
+  A data frame with 1590 observations on the following 8 variables.
   \describe{
     \item{\code{chr}}{Chromosome name}
     \item{\code{start}}{Start position}
     \item{\code{end}}{End position}
-    \item{\code{reads}}{Number of reads}
+    \item{\code{chip_reads}}{Number of ChIP reads}
+    \item{\code{control_reads}}{Number of control reads}
+    \item{\code{fold_change}}{Fold-change ChIP vs control}
+    \item{\code{p.value}}{P-value}
+    \item{\code{adj.p.value}}{Adjusted p-value}
   }
 }
 \details{
