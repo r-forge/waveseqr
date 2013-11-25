@@ -132,7 +132,9 @@ waveletThresholding <- function(infile, outdir, exptname, mother="morlet", winsi
         numlines <- numvec[j]
 
         #read data from chromosome j
+	      	data.offset <- NULL
 		chrdata <- scan(fin,what=list("","","",""),nlines=numlines,sep="\t",quiet=TRUE)
+		if(as.numeric(chrdata[[2]])[1] > 0) data.offset <- as.numeric(chrdata[[2]])[1]
         reads.raw <- as.numeric(chrdata[[4]])
 		rm(chrdata)
 		cat("\n\t\tRead data ... ",as.character(proc.time()[3] - currenttime)," seconds\n")
@@ -186,6 +188,7 @@ waveletThresholding <- function(infile, outdir, exptname, mother="morlet", winsi
         #convert binary vector to locations
         matsize <- length(pwrspec2)
         loc <- (1:matsize)*winsize
+	if(!is.null(data.offset)) loc <- loc + data.offset
         loc[ pwrspec2 <= minsig ] <- 0
 
         #aggregate contiguous regions for putative peaks
