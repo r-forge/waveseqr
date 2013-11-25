@@ -1,0 +1,15 @@
+citHeader("To cite the 'WaveSeqR' package in publications use:")
+
+bibentry(bibtype="Article",
+		title = "WaveSeq: A Novel Data-Driven Method of Detecting Histone Modification Enrichments Using Wavelets",
+		author = personList(as.person("Apratim Mitra"),
+							as.person("Jiuzhou Song")),
+		year = "2012",
+		pages = "e45486. doi:10.1371/journal.pone.0045486",
+		journal = "PLoS ONE",
+		volume = "7",
+		number = "9",
+		textVersion = paste("Mitra A, Song J (2012) ",
+						"WaveSeq: A Novel Data-Driven Method of Detecting Histone Modification Enrichments Using Wavelets. ",
+						"PLoS ONE 7(9): e45486. doi:10.1371/journal.pone.0045486",sep="")
+)

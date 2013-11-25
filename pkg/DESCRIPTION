@@ -1,0 +1,13 @@
+Package: WaveSeqR
+Type: Package
+Title: A Wavelet-based Method for ChIP-Seq peak calling
+Version: 1.0.3
+Date: 2013-11-22
+Author: Apratim Mitra, Jiuzhou Song
+Maintainer: Apratim Mitra <amitra83@umd.edu>, Jiuzhou Song <songj88@umd.edu>
+Depends: wmtsa, stats
+Description: Sensitive peak-caller for detecting punctate and diffuse enrichment regions that utilizes 
+	the continuous wavelet transform framework.
+SystemRequirements: perl, R >= 2.13.0
+License: GPL (>= 2)
+LazyLoad: yes

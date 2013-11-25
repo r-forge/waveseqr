@@ -1,0 +1,239 @@
+\documentclass[12pt]{report}
+\usepackage{latexsym}          % to get LASY symbols
+\usepackage{epsfig}
+\usepackage{amsmath}
+\usepackage{amssymb}             % to insertPostScript figures
+\usepackage{graphics}
+\usepackage{graphicx}
+\usepackage{url}
+%\usepackage{natbib}
+
+\usepackage{graphics}
+\usepackage{graphicx}
+
+\oddsidemargin 0.1in \textwidth 6in \topmargin 0pt \textheight 8in
+\evensidemargin 0.1in
+
+\bibliographystyle{apalike}
+% or: plain,unsrt,alpha,abbrv,acm,ieeetr
+
+\begin{document}
+
+\begin{titlepage}
+\begin{center}
+
+\vspace*{1.5in}
+\begin{huge}
+\texttt{WaveSeqR}:A Novel Data-Driven Method of 
+Detecting Histone Modification Enrichments Using Wavelets\\
+\vspace{2cm}
+\end{huge}
+\begin{large}
+User's Guide
+
+\vspace{2cm}
+Apratim Mitra \& Jiuzhou Song \\
+\vspace{1cm}
+April 23, 2013
+\end{large}
+
+
+
+\end{center}
+\end{titlepage}
+
+\newpage
+
+\tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Overview}
+
+WaveSeqR is a peak-caller for ChIP-Seq data based on the continuous wavelet transform. 
+This algorithm features a non-parametric approach to peak detection 
+based on Monte Carlo simulations. WaveSeqR makes no distributional assumptions 
+about the background or the data. The following steps are involved in the process:
+
+\begin{enumerate}
+	\item{Pre-processing of mapped sequence reads including removal of redundancy 
+	and calculation of summarized counts}
+	\item{Peak detection}
+	\begin{enumerate}
+		\item{Estimation of empirical distribution of wavelet coefficients}
+		\item{Thresholding wavelet transform to call putative peaks}
+		\item{Concatenating putative peaks within specified distance (gaps)}
+	\end{enumerate}
+	\item{Peak scoring}
+	\begin{enumerate}
+		\item{\textit{One-Sample Analysis}: Permutation-based significance 
+		scoring of putative peaks}
+		\item{\textit{Two-Sample Analysis}: Reads within putative peaks compared 
+		with control using a binomial test}
+	\end{enumerate}
+\end{enumerate}
+
+The first two steps are performed irrespective of one- or two-
+sample analyses, the only difference being the peak scoring schemes. The following 
+is a brief description of the R package. For further information and algorithmic
+details, please refer to \cite{mitra12}.
+
+\section{Main Pipeline Function: \texttt{waveseq}}
+The pipeline function \texttt{waveseq} can be used to perform all the above steps 
+and is recommended for most purposes. All parameters can be adjusted at the 
+command-line, but most analyses can be performed with the default settings.
+
+\texttt{
+	\begin{tabbing}
+		waveseq(\=chip,\hspace{1.3in}\=\# Input \=ChIP data set \\
+		\> control = NA, \>\# Control data set \\
+		\> outdir, \>\# Output directory \\
+		\> exptname, \>\# Experiment name\\
+		\> preprocess = TRUE, \>\# if TRUE, pre-process data\\
+		\> redundancy = TRUE, \>\# if TRUE, remove redundancy\\
+		\> thresdist = TRUE, \>\# if TRUE, estimate threshold distribution\\
+		\> peak.calling = TRUE, \>\# if TRUE, perform peak-calling\\ 
+		\> mother = "morlet", \>\# mother wavelet\\
+		\> winsize = 200, \>\# window size for summary counts\\
+		\> fragsize = 150, \>\# fragment size from experiment\\
+		\> p.thres = 0.2, \>\# P-value threshold for peak-detection\\
+		\> gap = 0, \>\# maximum peak-concatenation distance \\
+		\>\>\# $ \sim $ gap*winsize\\
+		\> minreads = 8, \>\# minimum reads for putative peaks = 8\\
+		\> samplesize = 1e+06, \>\# Maximum no.\ of samples for peak-scoring\\ 
+		\>\>\# in one-sample analyses\\			
+		\> N = 5000, \>\# Maximum no.\ of iterations for Monte Carlo\\ 
+		\>\>\# threshold estimation\\
+		\> maxscale = 12, \>\# Maximum scale for CWT computation\\
+		\> minsig = 2, \>\# Minimum no.\ of statistically significant \\
+		\>\>\# scales for putative peaks\\ 
+		\> minsigscale = 3, \>\# Smallest significant scale for putative peaks\\
+		\> maxsigscale = -1, \>\# Largest significant scale for putative peaks\\		
+		\> p.min = 0.001, \>\# Lower limit for threshold estimation\\
+		\> p.max = 0.3 \>\# Upper limit for threshold estimation\\		
+		\> adj.method = "fdr", \>\# P-value adjustment method\\
+		\> binom.sided = "two.sided" \>\>\# One-sided or Two-sided binomial test\\
+		\>)
+	\end{tabbing}
+}
+
+The most computationally intensive step is the estimation of wavelet coefficient 
+distribution performed using the \texttt{getThresholdDistribution} function. For 
+large experimental designs, it is recommended to perform this step in batch 
+before peak-calling. Individual modules, e.g.\ preprocess, redundancy, 
+thresdist, peak-calling, can be turned ON or OFF using the respective 'flag' 
+parameters. Individual ChIP experiments are identified using a unique \texttt{exptname}.
+
+\section{Data Pre-processing}
+
+Mapped DNA sequence reads from high-throughput sequencing experiments can be 
+represented using many different file formats, e.g.\ SAM, BAM and BED, to name a 
+few. However, due to the relatively large size of these formats, summary read 
+count formats, such as, bedGraph and WIG, is commonly used for visualization of 
+sequencing results. The latter formats provide a binned view of mapped sequence 
+reads and are consequently more compact. Since the list of file formats is only going to
+to increase in the future, and as most of these formats can be inter-
+converted using open-source tools, we choose two common formats for our software. 
+WaveSeqR supports input data in the form of BED or padded bedGraph files. The 
+bedGraph format achieves a certain level of compression by ommitting bins or 
+windows with zero read counts resulting in a sparse representation. Since our 
+algorithm requires a continuous data profile, we 'pad' the bedGraph files with 
+zero-count windows. Default fragment sizes were chosen based on experience and 
+should be adjusted based on the particular ChIP experiment. A default window size 
+of 200 corresponds to average nucleosome spacing, but may be susceptible to edge
+effects. Smaller window sizes will likely produce a coarser readout.
+
+\section{Peak Detection}
+The most important control parameters for the peak-calling procedure are \texttt{mother}, 
+\texttt{p.thres} and \texttt{gap}. The \texttt{mother} parameter is used to select 
+the wavelet mother function and can take all values accepted by the \texttt{wavCWT} 
+function of the \texttt{wmtsa} package. Tested wavelets include,
+
+\begin{itemize}
+	\item{\texttt{Morlet}: suitable for sharp, punctate peaks, e.g.\ TFBS and H3K4me3}
+	\item{\texttt{Mexican Hat} or \texttt{gaussian2}: suitable for diffuse peaks, 
+	e.g.\ H3K36me3 or \\ H3K27me3}
+\end{itemize}
+
+\texttt{p.thres} determines the stringency of the initial peak detection step.
+Default values of $0.2$ are likely to be sufficient for sharp peaks, but looser
+thresholds, e.g.\ \texttt{p.thres} $= 0.4$, are recommended for comparable sensitivity
+for diffuse enrichments. The parameters \texttt{p.min} and \texttt{p.min}
+define the limits of the empirical distribution stored after the Monte Carlo
+estimation and must be changed for \texttt{p.thres} values outside this range.
+\texttt{N} sets the maximum number of iterations for the Monte Carlo simulations
+and was chosen as a trade-off between accuracy and computational cost. The wavelet coefficient 
+thresholds were found to reach saturation fairly quickly, and lower values may lead to 
+comparable results. However, higher values can lead to increased computation time 
+with possible overfitting effects.
+
+WaveSeqR concatenates putative peaks within a maximum distance specified
+by the \texttt{gap} parameter and calculated as \texttt{gap*winsize}. The default gap-size of 
+$0$ may be suitable for transcription factor binding site detection, but higher values are
+recommended for histone modifications, particularly broad marks, e.g.\ H3K27me3. For a 
+guide to choosing a suitable gap-size refer to \cite{mitra12}.
+
+The scale parameters \texttt{maxscale}, \texttt{minsig}, 
+\texttt{minsigscale}, and \texttt{maxsigscale}
+also affect the peak-detection procedure, but can be treated as internal parameters 
+and changes are \emph{not recommended}. Default values have been found to work well 
+for a range of data sets and the authors cannot guarantee comparable performance for 
+different values. 
+
+The sensitivity of wavelets can result in local fluctuations leading to spurious
+peak calls. One way to control this is to set the \texttt{minreads} parameter which
+defines the minimum number of reads in a putative peak. This is a downstream filtering
+step and adjusting this parameter will not change the peak-detection process. However,
+in case a particular ChIP experiment results in large-scale non-specific binding, higher
+values of \texttt{minreads} may be necessary.
+
+\section{Peak Scoring}
+\subsection{One-Sample Analysis}
+For one-sample analyses, putative peaks are scored using a novel permutation-based 
+approach. Samples drawn from the peak list are randomly distributed across the chromosomes
+and the read counts within these permuted peaks provide an empirical estimate of the background. 
+The \texttt{samplesize} parameter defines the maximum number of peaks sampled from any 
+chromosome. To prevent oversampling effects, the number of sampled peaks are proportional 
+to the number of putative enrichments on that chromosome.
+
+\subsection{Two-Sample Analysis}
+For a two-sample analysis, e.g.\ in the presence of control data, the read numbers
+in putative peaks are compared between the ChIP and control samples with a 
+binomial test using the \texttt{binom.test} function in base R. Default is 'two.sided'.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Download and Installation}
+
+Archived R source package for WaveSeqR can be downloaded from 
+\url{http://www.ansc.umd.edu/Labs/Song/Software.html} 
+and installed using the \texttt{install.packages} function.
+
+\begin{verbatim}
+	> install.packages("path-to-download-dir/WaveSeqR_1.0.1.tar.gz", 
+					repos=NULL, type="source")
+\end{verbatim}
+
+The pre-processing steps of the algorithm requires that a version of 
+\texttt{perl} be available on the system path. WaveSeqR also requires the 
+CRAN package \texttt{wmtsa}, a collection of wavelet methods from 
+\cite{donald00} including the continuous wavelet transform, which 
+forms the backbone of the peak-detection step in WaveSeqR. For the above 
+installation to be successful, \texttt{wmtsa} must be already installed on the
+system.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{thebibliography}{1}
+
+\bibitem{mitra12}
+Apratim Mitra \& Jiuzhou Song,
+\emph{WaveSeq: A Novel Data-Driven Method of Detecting Histone Modification 
+Enrichments Using Wavelets}, 
+PLOS ONE, 2012, \textbf{7(9)}: e45486. doi:10.1371/journal.pone.0045486
+
+\bibitem{donald00}
+Donald B.\ Percival \& Andrew T.\ Walden,
+\emph{Wavelet Methods for Time Series Analysis}, 
+Cambridge University Press, 2000.
+
+\end{thebibliography}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
